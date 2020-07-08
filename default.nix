@@ -47,7 +47,7 @@ let
       cat > $out/bin/${name}.sh <<'EOF'
       #!${bash}/bin/bash
       set -ex
-      export PATH=${gnutar}/bin:${coreutils}/bin:$PATH
+      export PATH=${gnutar}/bin:${coreutils}/bin:${gnused}/bin:$PATH
 
       echo "Extract installer archive."
       tar xf ${drupal}/tarballs/drupal-*.tar.gz
@@ -66,7 +66,7 @@ in pkgs.dockerTools.buildLayeredImage rec {
   name = "docker-registry.intr/apps/drupal";
   tag = "latest";
   contents =
-    [ bashInteractive coreutils gnutar gzip entrypoint nss-certs ];
+    [ bashInteractive coreutils gnutar gnused entrypoint nss-certs ];
   config = {
     Entrypoint = "${entrypoint}/bin/drupal-install.sh";
     Env = [
