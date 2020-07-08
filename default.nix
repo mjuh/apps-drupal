@@ -20,17 +20,22 @@ let
   composer = callPackage ./pkgs/composer { };
 
   drushInstallCommand = "${composer}/bin/composer require drush/drush";
+  drupalConsoleInstallCommand = "${composer}/bin/composer require drupal/console";
 
   installCommand = builtins.concatStringsSep " " [
     "${php73}/bin/php"
-    "./vendor/bin/drush site-install"
-    "--db-url=mysql://$DB_USER:$DB_PASSWORD@$DB_HOST/$DB_NAME"
-    "--account-name=$ADMIN_USERNAME"
-    "--account-mail=$ADMIN_EMAIL"
-    "--account-pass=$ADMIN_PASSWORD"
-    "--locale=ru"
+    "./vendor/bin/drupal site:install"
+    "--langcode=ru"
+    "--db-type=mysql"
+    "--db-host=$DB_HOST"
+    "--db-name=$DB_NAME"
+    "--db-user=$DB_USER"
+    "--db-pass=$DB_PASSWORD"
     "--site-name=$APP_TITLE"
-    "-y --no-interaction"
+    "--account-name=$ADMIN_USERNAME"
+    "--account-pass=$ADMIN_PASSWORD"
+    "--account-mail=$ADMIN_EMAIL"
+    "--force"
   ];
 
   entrypoint = (stdenv.mkDerivation rec {
@@ -48,7 +53,8 @@ let
       tar xf ${drupal}/tarballs/drupal-*.tar.gz
 
       echo "Install."
-      ${drushInstallCommand}
+      ${drupalConsoleInstallCommand}
+      echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www\.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
       ${installCommand}
       EOF
 
