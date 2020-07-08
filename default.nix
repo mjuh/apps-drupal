@@ -66,7 +66,7 @@ in pkgs.dockerTools.buildLayeredImage rec {
   name = "docker-registry.intr/apps/drupal";
   tag = "latest";
   contents =
-    [ bashInteractive coreutils gnutar gnused entrypoint nss-certs ];
+    [ bashInteractive coreutils gnutar gnused gzip entrypoint nss-certs ];
   config = {
     Entrypoint = "${entrypoint}/bin/drupal-install.sh";
     Env = [
