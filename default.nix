@@ -54,7 +54,7 @@ let
 
       echo "Install."
       ${drupalConsoleInstallCommand}
-      echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www\.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
+      echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
       ${installCommand}
       EOF
 
