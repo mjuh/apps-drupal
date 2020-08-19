@@ -2,10 +2,10 @@
 
 stdenv.mkDerivation rec {
   pname = "drupal";
-  version = "8.9.3";
+  version = "9.0.3";
   src = fetchurl {
     url = "https://ftp.drupal.org/files/projects/${pname}-${version}.tar.gz";
-    sha256 = "12b61v56fvpb10f0byd3i9zi9ary1i0kxv9rbi8zb9j4lg015sav";
+    sha256 = "067cnx8gi5a24y3aj54z7wm3zxb295xw0bdpyjhc5ihm27bjdbxb";
   };
   installPhase = ''
     tar czf ${pname}-${version}.tar.gz *
