@@ -20,22 +20,17 @@ let
   composer = callPackage ./pkgs/composer { };
 
   drushInstallCommand = "${composer}/bin/composer require drush/drush";
-  drupalConsoleInstallCommand = "${composer}/bin/composer require drupal/console";
+  drupalConsoleInstallCommand = "${composer}/bin/composer require drupal/console:1.9.4";
 
   installCommand = builtins.concatStringsSep " " [
     "${php73}/bin/php"
-    "./vendor/bin/drupal site:install"
-    "--langcode=ru"
-    "--db-type=mysql"
-    "--db-host=$DB_HOST"
-    "--db-name=$DB_NAME"
-    "--db-user=$DB_USER"
-    "--db-pass=$DB_PASSWORD"
+    "./vendor/bin/drush site:install"
+    "--locale=ru"
+    "--db-url=mysql://$DB_USER:$DB_PASSWORD@$DB_HOST/$DB_NAME"
     "--site-name=$APP_TITLE"
     "--account-name=$ADMIN_USERNAME"
     "--account-pass=$ADMIN_PASSWORD"
     "--account-mail=$ADMIN_EMAIL"
-    "--force"
   ];
 
   entrypoint = (stdenv.mkDerivation rec {
@@ -53,7 +48,8 @@ let
       tar xf ${drupal}/tarballs/drupal-*.tar.gz
 
       echo "Install."
-      ${drupalConsoleInstallCommand}
+      # rm -rf vendor composer.json composer.lock
+      ${drushInstallCommand}
       echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
       ${installCommand}
       EOF
