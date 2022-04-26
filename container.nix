@@ -8,7 +8,7 @@ let
   drupal-po = callPackage ./pkgs/drupal-ru-po { pver = version; };
 
   installCommand = builtins.concatStringsSep " " [
-    "${php}/bin/php"  # на момент написания php из комплекта drush не работает, и выдает малоинформативные ошибки о проблемах fork
+    "${php}/bin/php" # на момент написания php из комплекта drush не работает, и выдает малоинформативные ошибки о проблемах fork
     "${drush}/libexec/drush/drush.phar site:install -y"
     "--locale=ru"
     "--db-url=mysql://$DB_USER:$DB_PASSWORD@$DB_HOST/$DB_NAME"
@@ -20,34 +20,37 @@ let
 
   entrypoint = (stdenv.mkDerivation rec {
     name = "drupal-install";
-    builder = writeScript "builder.sh" (''
-      source $stdenv/setup
-      mkdir -p $out/bin
+    builder = writeScript "builder.sh" (
+      ''
+        source $stdenv/setup
+        mkdir -p $out/bin
 
-      cat > $out/bin/${name}.sh <<'EOF'
-      #!${bash}/bin/bash
-      set -ex
-      export PATH=${gnutar}/bin:${coreutils}/bin:${gnused}/bin:${mariadb.client}/bin:$PATH
+        cat > $out/bin/${name}.sh <<'EOF'
+        #!${bash}/bin/bash
+        set -ex
+        export PATH=${gnutar}/bin:${coreutils}/bin:${gnused}/bin:${mariadb.client}/bin:$PATH
 
-      echo "Extract installer archive."
-      tar xf ${drupal} --strip-components=1
+        echo "Extract installer archive."
+        tar xf ${drupal} --strip-components=1
 
-      echo "Prepare translation"
-      mkdir -p sites/default/files/translations
-      cp ${drupal-po} sites/default/files/translations/
+        echo "Prepare translation"
+        mkdir -p sites/default/files/translations
+        cp ${drupal-po} sites/default/files/translations/
 
-      # rm -rf vendor composer.json composer.lock ???
-      echo "Patch config"
-      echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
-      echo "Install."
-      ${installCommand}
-      EOF
+        # rm -rf vendor composer.json composer.lock ???
+        echo "Patch config"
+        echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
+        echo "Install."
+        ${installCommand}
+        EOF
 
-      chmod 555 $out/bin/${name}.sh
-    '');
+        chmod 555 $out/bin/${name}.sh
+      ''
+    );
   });
 
-in pkgs.dockerTools.buildLayeredImage rec {
+in
+pkgs.dockerTools.buildLayeredImage rec {
   name = "docker-registry.intr/apps/drupal";
 
   contents =
