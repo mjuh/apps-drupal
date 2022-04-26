@@ -1,30 +1,15 @@
-{ nixpkgs ? (import <nixpkgs> { }).fetchgit {
-  url = "https://github.com/NixOS/nixpkgs.git";
-  rev = "ce9f1aaa39ee2a5b76a9c9580c859a74de65ead5";
-  sha256 = "1s2b9rvpyamiagvpl5cggdb2nmx4f7lpylipd397wz8f0wngygpi";
-}, overlayUrl ? "git@gitlab.intr:_ci/nixpkgs.git", overlayRef ? "master" }:
+{ nixpkgs, system, php, version }:
 
-with import nixpkgs {
-  overlays = [
-    (import (builtins.fetchGit {
-      url = overlayUrl;
-      ref = overlayRef;
-    }))
-  ];
-};
-
-with lib;
+with import nixpkgs { inherit system; };
 
 let
-  drupal = callPackage ./pkgs/drupal { };
-  composer = callPackage ./pkgs/composer { };
 
-  drushInstallCommand = "${composer}/bin/composer require drush/drush";
-  drupalConsoleInstallCommand = "${composer}/bin/composer require drupal/console:1.9.4";
+  drupal = callPackage ./pkgs/drupal { pver = version; };
+  drupal-po = callPackage ./pkgs/drupal-ru-po { pver = version; };
 
   installCommand = builtins.concatStringsSep " " [
-    "${php73}/bin/php"
-    "./vendor/bin/drush site:install"
+    "${php}/bin/php"  # на момент написания php из комплекта drush не работает, и выдает малоинформативные ошибки о проблемах fork
+    "${drush}/libexec/drush/drush.phar site:install -y"
     "--locale=ru"
     "--db-url=mysql://$DB_USER:$DB_PASSWORD@$DB_HOST/$DB_NAME"
     "--site-name=$APP_TITLE"
@@ -42,15 +27,19 @@ let
       cat > $out/bin/${name}.sh <<'EOF'
       #!${bash}/bin/bash
       set -ex
-      export PATH=${gnutar}/bin:${coreutils}/bin:${gnused}/bin:$PATH
+      export PATH=${gnutar}/bin:${coreutils}/bin:${gnused}/bin:${mariadb.client}/bin:$PATH
 
       echo "Extract installer archive."
-      tar xf ${drupal}/tarballs/drupal-*.tar.gz
+      tar xf ${drupal} --strip-components=1
 
-      echo "Install."
-      # rm -rf vendor composer.json composer.lock
-      ${drushInstallCommand}
+      echo "Prepare translation"
+      mkdir -p sites/default/files/translations
+      cp ${drupal-po} sites/default/files/translations/
+
+      # rm -rf vendor composer.json composer.lock ???
+      echo "Patch config"
       echo -e "\$settings['trusted_host_patterns'] = [\n\t'^$DOMAIN_NAME$',\n\t'^www.$DOMAIN_NAME$'\n];"| sed 's/\./\\./g' >> sites/default/default.settings.php
+      echo "Install."
       ${installCommand}
       EOF
 
@@ -60,9 +49,9 @@ let
 
 in pkgs.dockerTools.buildLayeredImage rec {
   name = "docker-registry.intr/apps/drupal";
-  tag = "latest";
+
   contents =
-    [ bashInteractive coreutils gnutar gnused gzip entrypoint nss-certs ];
+    [ bashInteractive coreutils gnutar gnused gzip entrypoint drush mariadb.client ];
   config = {
     Entrypoint = "${entrypoint}/bin/drupal-install.sh";
     Env = [
