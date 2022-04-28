@@ -35,7 +35,7 @@ let
 
         echo "Prepare translation"
         mkdir -p sites/default/files/translations
-        cp ${drupal-po} sites/default/files/translations/
+        cp ${drupal-po} sites/default/files/translations/${drupal-po.name}
 
         # rm -rf vendor composer.json composer.lock ???
         echo "Patch config"
